@@ -22,7 +22,7 @@ use crate::shell::window::WindowHandle;
 use crate::shell::{init, runloop, Error as PlatformError, WindowBuilder};
 use crate::win_handler::AppState;
 use crate::window::{Window, WindowId};
-use crate::{theme, Data, DruidHandler, Env, LocalizedString, Menu, Widget};
+use crate::{theme, Data, DruidHandler, LocalizedString, MenuDesc, Widget};
 
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher<T> {
@@ -39,7 +39,7 @@ type WidgetBuilderFn<T> = dyn Fn() -> Box<dyn Widget<T>> + 'static;
 pub struct WindowDesc<T> {
     pub(crate) root_builder: Arc<WidgetBuilderFn<T>>,
     pub(crate) title: Option<LocalizedString<T>>,
-    pub(crate) menu: Option<Menu<T>>,
+    pub(crate) menu: Option<MenuDesc<T>>,
     //TODO: more things you can configure on a window, like size?
 }
 
@@ -138,7 +138,7 @@ impl<T: Data + 'static> WindowDesc<T> {
     }
 
     /// Set the menu for this window.
-    pub fn menu(mut self, menu: Menu<T>) -> Self {
+    pub fn menu(mut self, menu: MenuDesc<T>) -> Self {
         self.menu = Some(menu);
         self
     }
