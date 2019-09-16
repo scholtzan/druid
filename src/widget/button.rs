@@ -47,6 +47,9 @@ pub struct Label<T> {
 /// A button with a text label.
 pub struct Button<T> {
     label: Label<T>,
+    /// If present, this will be used to generate an action when the button
+    /// is clicked.
+    action: Option<Box<dyn Fn(&mut EventCtx, &mut T, &Env) -> Option<Action>>>,
 }
 
 /// A label with dynamic text.
@@ -144,7 +147,18 @@ impl<T: Data + 'static> Button<T> {
     pub fn new(text: impl Into<LabelText<T>>) -> Button<T> {
         Button {
             label: Label::aligned(text, UnitPoint::CENTER),
+            action: None,
         }
+    }
+
+    /// Create a new button with a closure that will be called when the button
+    /// is clicked.
+    pub fn with_action(
+        mut self,
+        action: impl Fn(&mut EventCtx, &mut T, &Env) -> Option<Action> + 'static,
+    ) -> Self {
+        self.action = Some(Box::new(action));
+        self
     }
 
     pub fn sized(text: impl Into<LabelText<T>>, width: f64, height: f64) -> impl Widget<T> {
@@ -152,6 +166,7 @@ impl<T: Data + 'static> Button<T> {
             UnitPoint::CENTER,
             SizedBox::new(Button {
                 label: Label::aligned(text, UnitPoint::CENTER),
+                action: None,
             })
             .width(width)
             .height(height),
@@ -207,8 +222,8 @@ impl<T: Data> Widget<T> for Button<T> {
         &mut self,
         event: &Event,
         ctx: &mut EventCtx,
-        _data: &mut T,
-        _env: &Env,
+        data: &mut T,
+        env: &Env,
     ) -> Option<Action> {
         let mut result = None;
         match event {
@@ -221,7 +236,10 @@ impl<T: Data> Widget<T> for Button<T> {
                     ctx.set_active(false);
                     ctx.invalidate();
                     if ctx.is_hot() {
-                        result = Some(Action::from_str("hit"));
+                        result = match self.action.as_ref() {
+                            Some(f) => (f)(ctx, data, env),
+                            None => Some(Action::from_str("hit")),
+                        };
                     }
                 }
             }
