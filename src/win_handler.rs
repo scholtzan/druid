@@ -128,14 +128,14 @@ impl<T: Data> Windows<T> {
 
 impl<'a, T: Data> SingleWindowState<'a, T> {
     fn paint(&mut self, piet: &mut Piet, ctx: &mut dyn WinCtx) -> bool {
-        let request_anim = self.send_anim_frame(ctx);
-        self.send_layout(piet);
+        let request_anim = self.do_anim_frame(ctx);
+        self.do_layout(piet);
         piet.clear(BACKGROUND_COLOR);
-        self.send_paint(piet);
+        self.do_paint(piet);
         request_anim
     }
 
-    fn send_anim_frame(&mut self, ctx: &mut dyn WinCtx) -> bool {
+    fn do_anim_frame(&mut self, ctx: &mut dyn WinCtx) -> bool {
         // TODO: this calculation uses wall-clock time of the paint call, which
         // potentially has jitter.
         //
@@ -159,7 +159,7 @@ impl<'a, T: Data> SingleWindowState<'a, T> {
         request_anim
     }
 
-    fn send_layout(&mut self, piet: &mut Piet) {
+    fn do_layout(&mut self, piet: &mut Piet) {
         let mut layout_ctx = LayoutCtx {
             text_factory: piet.text(),
             window_id: self.window_id,
@@ -167,7 +167,7 @@ impl<'a, T: Data> SingleWindowState<'a, T> {
         self.window.layout(&mut layout_ctx, self.data, self.env);
     }
 
-    fn send_paint(&mut self, piet: &mut Piet) {
+    fn do_paint(&mut self, piet: &mut Piet) {
         let mut paint_ctx = PaintCtx {
             render_ctx: piet,
             window_id: self.window_id,
