@@ -19,8 +19,7 @@ use druid::menu::{Menu, MenuItem};
 use druid::widget::{ActionWrapper, Align, Button, Column, Label, Padding};
 use druid::{
     Action, AppLauncher, BaseState, BoxConstraints, Command, Data, Env, Event, EventCtx, HotKey,
-    KeyCode, LayoutCtx, LocalizedString, PaintCtx, Selector, SysMods, UpdateCtx, Widget,
-    WindowDesc,
+    KeyCode, LayoutCtx, LocalizedString, PaintCtx, Selector, UpdateCtx, Widget, WindowDesc,
 };
 
 const MENU_COUNT_ACTION: Selector = Selector::new("menu-count-action");
@@ -33,7 +32,7 @@ struct State {
 
 fn main() {
     simple_logger::init().unwrap();
-    let main_window = WindowDesc::new(ui_builder).menu(|_, _| make_menu(State::default()));
+    let main_window = WindowDesc::new(ui_builder).menu(make_menu(&State::default()));
     let data = 0_u32;
     AppLauncher::with_window(main_window)
         .launch(data)
@@ -59,7 +58,7 @@ fn ui_builder() -> impl Widget<u32> {
                 eprintln!("{:?}", key);
                 state.menu_count += 1;
                 ctx.submit_command(
-                    Command::new(Selector::SET_MENU, make_menu::<u32>(state.clone())),
+                    Command::new(Selector::SET_MENU, make_menu::<u32>(&state)),
                     None,
                 );
                 eprintln!("count {}", state.menu_count);
@@ -68,16 +67,14 @@ fn ui_builder() -> impl Widget<u32> {
             Event::KeyUp(key) if HotKey::new(None, KeyCode::ArrowDown).matches(key) => {
                 state.menu_count = state.menu_count.saturating_sub(1);
                 ctx.submit_command(
-                    Command::new(Selector::SET_MENU, make_menu::<u32>(state.clone())),
+                    Command::new(Selector::SET_MENU, make_menu::<u32>(state)),
                     None,
                 );
                 eprintln!("count {}", state.menu_count);
                 None
             }
             Event::Command(ref cmd) if cmd == &druid::menu::selectors::NEW_FILE => {
-                let state2 = state.to_owned();
-                let new_win =
-                    WindowDesc::new(ui_builder).menu(move |_, _| make_menu(state2.clone()));
+                let new_win = WindowDesc::new(ui_builder).menu(make_menu(state));
                 let command = Command::new(Selector::NEW_WINDOW, new_win);
                 ctx.submit_command(command, None);
                 None
@@ -86,7 +83,7 @@ fn ui_builder() -> impl Widget<u32> {
                 state.selected = *cmd.get_object().unwrap();
                 eprintln!("{}", state.selected);
                 ctx.submit_command(
-                    Command::new(Selector::SET_MENU, make_menu::<u32>(state.clone())),
+                    Command::new(Selector::SET_MENU, make_menu::<u32>(state)),
                     None,
                 );
                 None
@@ -155,7 +152,7 @@ impl<T: Data, S> Widget<T> for EventInterceptor<T, S> {
     }
 }
 
-fn make_menu<T: Data>(state: State) -> Menu<T> {
+fn make_menu<T: Data>(state: &State) -> Menu<T> {
     druid::menu::macos_menu_bar().append(Menu::new(LocalizedString::new("custom")).append_iter(
         || {
             (0..state.menu_count).map(|i| {
